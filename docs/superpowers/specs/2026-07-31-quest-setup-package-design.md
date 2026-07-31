@@ -48,32 +48,23 @@ com.immrsiv.quest-setup/
 ├── CHANGELOG.md
 ├── README.md                     # install URL, usage, blessing procedure
 ├── Editor/
-│   ├── Immrsiv.QuestSetup.Editor.asmdef     # editor-only; NO Meta/OpenXR references
-│   ├── Core/
-│   │   ├── BaselineVersions.cs   # single source of truth for pinned versions
-│   │   ├── QuestSetupRuleAttribute.cs
-│   │   ├── IQuestSetupRule.cs
-│   │   ├── RuleRegistry.cs       # TypeCache-based discovery
-│   │   ├── FixAllPipeline.cs     # phase state machine, domain-reload resume
-│   │   └── PackageInstaller.cs   # PackageManager.Client wrapper
-│   ├── Rules/                    # rules compilable WITHOUT the Meta SDK
-│   │   ├── PinnedPackagesRule.cs
-│   │   ├── AndroidBuildSettingsRules.cs
-│   │   ├── GraphicsApiRule.cs
-│   │   ├── ColorSpaceRule.cs
-│   │   ├── SamplesImportedRules.cs
-│   │   └── ViveLayerKillSwitch.cs   # also hosts the [InitializeOnLoad] env-var fix
-│   ├── RulesMeta/
-│   │   ├── Immrsiv.QuestSetup.Editor.MetaRules.asmdef
-│   │   │     # references Meta/OpenXR asmdefs; uses versionDefines +
-│   │   │     # defineConstraints so it only compiles once the SDK is installed
-│   │   ├── XrLoaderRules.cs
-│   │   ├── OpenXrFeatureRules.cs
-│   │   ├── RenderModeRules.cs
-│   │   └── MetaProjectSetupRule.cs  # delegates to OVRProjectSetup
-│   └── Window/
-│       ├── QuestSetupWindow.cs
-│       └── QuestSetupWindow.uxml/.uss (UI Toolkit)
+│   ├── Immrsiv.QuestSetup.Editor.asmdef     # editor-only; MAY reference Meta/OpenXR editor
+│   │                                        # assemblies — package.json dependencies guarantee
+│   │                                        # they are installed before this package compiles
+│   └── Setup/
+│       ├── SetupCheck.cs         # abstract base + SetupCheckRegistry (team pattern from com.immrsiv.vive-vrbase)
+│       ├── QuestSetupWindow.cs   # IMGUI window + once-per-project auto-open (team pattern)
+│       ├── SetupCLI.cs           # batch-mode RunChecks / FixAll for CI
+│       ├── SampleSyncTool.cs     # dev-only: syncs template sample folders into Samples~
+│       └── Checks/
+│           ├── ViveLayerKillSwitchCheck.cs  # also hosts the [InitializeOnLoad] env-var fix
+│           ├── XRLoaderCheck.cs
+│           ├── OpenXRFeaturesCheck.cs
+│           ├── RenderModeCheck.cs
+│           ├── MetaProjectSetupCheck.cs     # delegates to OVRProjectSetup
+│           ├── ColorSpaceCheck.cs
+│           ├── AndroidPlayerCheck.cs
+│           └── SamplesImportedCheck.cs
 └── Samples~/
     ├── ExampleScenes/            # synced from Assets/Samples/<Meta XR Interaction SDK>/205.0.0/Example Scenes (~13 MB)
     └── ShowcaseSamples/          # synced from Assets/ShowcaseSamples (~88 MB)
@@ -92,7 +83,7 @@ com.immrsiv.quest-setup/
 ]
 ```
 
-Note: `Meta XR Interaction SDK Essentials` (the large shared-asset sample both sets depend on) is **not** bundled — a Phase 3 rule imports it from Meta's own package via the Package Manager sample API, keeping canonical GUIDs and our repo small.
+Notes: (a) The interaction assets these samples depend on ship inside the `com.meta.xr.sdk.interaction` package itself (a package.json dependency) — no Meta sample import is required. (b) The bundled Example Scenes are the template's **modified** copies (hand/button interaction fixes) of Meta's "Example Scenes" sample from `com.meta.xr.sdk.interaction.ovr`, with original GUIDs — consumers must not additionally import Meta's own "Example Scenes" sample (the samples check warns if both are present).
 
 ## 4. Pinned baseline (initial values)
 
@@ -108,37 +99,35 @@ Note: `Meta XR Interaction SDK Essentials` (the large shared-asset sample both s
 
 The Unity version check is a warning-severity rule (can't be auto-fixed); package versions are required-severity and auto-fixable.
 
-## 5. Rule engine
+## 5. Check engine (team pattern)
+
+Follows the proven `com.immrsiv.vive-vrbase` pattern verbatim:
 
 ```csharp
-public interface IQuestSetupRule
+public abstract class SetupCheck
 {
-    string Id { get; }              // stable, e.g. "openxr.rendermode.standalone"
-    string Category { get; }        // "Packages", "XR Settings", "Android", "Samples", "Machine"
-    string Description { get; }
-    RuleSeverity Severity { get; }  // Required | Recommended
-    SetupPhase Phase { get; }       // Packages | Settings | Samples
-    bool IsApplicable();            // e.g. skip Android rules if module absent
-    RuleStatus Evaluate();          // Satisfied | Unsatisfied | Error(message)
-    void Fix();                     // idempotent; may throw → surfaced as Error
+    public abstract string Label { get; }
+    public virtual bool IsAdvisory => false;   // advisory checks report but never fail Fix All/CI
+    public abstract bool Evaluate(out string details);  // details = current vs expected state
+    public abstract void Fix();                 // idempotent; may throw → surfaced inline
+}
+
+public static class SetupCheckRegistry
+{
+    public static List<SetupCheck> CreateAll() => new List<SetupCheck> { /* explicit ordered list */ };
 }
 ```
 
-- Rules are discovered with `TypeCache.GetTypesWithAttribute<QuestSetupRuleAttribute>()` — no manual registration; rules in the Meta asmdef simply appear once that assembly compiles.
+- Explicit ordered registration (no attribute discovery) — order defines Fix All execution order.
 - All `Fix()` implementations must be idempotent (safe to re-run; Fix All re-evaluates before fixing).
-- Evaluation runs on window open/focus and after domain reloads; results are cached per compilation.
+- Evaluation runs on window open/focus — the same "re-check when the window regains focus" model VRBase uses.
 
-## 6. Fix All pipeline and domain-reload resilience
+## 6. Dependencies and domain-reload handling (simplified)
 
-The hard part: installing packages and importing samples trigger recompiles/domain reloads, so Fix All cannot be a single method call.
+The original design assumed a bootstrap pipeline to install the Meta SDK. Not needed: **`com.meta.xr.sdk.all` and all pinned Unity packages resolve from the default registry, so they are plain `package.json` dependencies** — UPM installs them *before* our package compiles. Consequences:
 
-- `FixAllPipeline` persists `{running, currentPhase}` in `SessionState`.
-- An `[InitializeOnLoad]` hook checks that state after every domain reload and continues the pipeline.
-- **Phase 1 — Packages:** diff `manifest.json` against `BaselineVersions`; apply via `Client.AddAndRemove` (single batched resolve). Unity recompiles; pipeline resumes.
-- **Phase 2 — Settings:** run all Settings-phase rules in declaration order. The Meta-dependent rules now exist because the Meta asmdef compiled after Phase 1.
-- **Phase 3 — Samples:** import both package samples via `UnityEditor.PackageManager.UI.Sample.FindByPackage(...)` / `Sample.Import()`; resume after the import's reload and re-evaluate everything.
-- Pipeline halts (with the failing rule highlighted) if a Required rule's Fix throws; Recommended failures are logged and skipped.
-- If the user closes the editor mid-pipeline, `SessionState` clears and the pipeline simply stops — re-running Fix All from the (partially green) checklist is always safe because rules are idempotent.
+- One editor asmdef that references Meta/OpenXR editor assemblies directly. No version-define split, no `PackageManager.Client` bootstrap, no persisted pipeline state.
+- The only operations that trigger domain reloads are sample imports (Phase-3-style checks). Handling matches VRBase's documented UX: **the user clicks Fix All, the editor reloads, they click Fix All again until every row is green** — the window re-evaluates on focus, and idempotent fixes make repeat clicks safe. The README documents "click Fix All until green (usually twice)".
 
 ## 7. Initial rule set
 
@@ -164,10 +153,9 @@ The hard part: installing packages and importing samples trigger recompiles/doma
 11. **VIVE OpenXR implicit-layer kill switch** (Required, editor-process-scoped). The package's always-compiled assembly contains the `[InitializeOnLoad]` class that sets the four `DISABLE_XR_APILAYER_VIVE_*_1` environment variables — the fix ships with the package itself, no per-project script. The rule reports whether VIVE Hub layers are registered on the machine (registry read) and confirms the kill switch is active; informational green when VIVE Hub isn't installed.
 
 **Phase 3 — Samples**
-12. "Meta XR Interaction SDK Essentials" imported from Meta's own package (Required for the bundled samples to work, auto-fix via Package Manager sample API).
-13. "Interaction Example Scenes" imported at current package version (Recommended, auto-fix).
-14. "Showcase Samples" imported at current package version (Recommended, auto-fix).
-15. TextMesh Pro essentials present (Recommended, auto-fix).
+12. "Interaction Example Scenes" imported at current package version; warns if Meta's own "Example Scenes" sample is also imported (GUID collision) (Recommended, auto-fix).
+13. "Showcase Samples" imported at current package version (Recommended, auto-fix).
+14. TextMesh Pro essentials present (Recommended, auto-fix).
 
 Rule list is expected to grow; each new discovery (like this week's two) becomes one class in `Rules/` or `RulesMeta/`.
 
@@ -206,7 +194,8 @@ A **sync tool** ships in the package's editor assembly (menu visible only when t
 
 ## 11. Testing
 
-- **EditMode tests** (in package `Tests/`): baseline diff logic (manifest vs pinned list), rule registry discovery, pipeline state machine transitions (simulated, no real package installs).
+- **Batch CLI verification** (team pattern): `SetupCLI.RunChecks` / `SetupCLI.FixAll` batch-mode entry points, so every check is scriptable and CI-able, mirroring VRBase's `SetupCLI`.
+- **Template self-verification:** in this template project all checks must evaluate green (it IS the reference configuration); run after every check lands.
 - **Manual acceptance matrix** per release, on a scratch copy:
   1. Fresh Unity 6000.3 URP project → Fix All → all green → builds APK → runs on Quest 3 → plays over Link in editor with both eyes rendering.
   2. Already-configured project (this template) → window opens all green, Fix All is a no-op (idempotency check).
