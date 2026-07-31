@@ -13,5 +13,17 @@
     "com.unity.xr.openxr": "1.17.0",
     "com.unity.render-pipelines.universal": "17.3.0",
     "com.unity.inputsystem": "1.19.0"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Interaction Example Scenes",
+      "description": "Meta XR Interaction SDK example scenes with Immrsiv fixes (hand + button interaction). Do NOT also import Meta's own 'Example Scenes' sample - same GUIDs.",
+      "path": "Samples~/ExampleScenes"
+    },
+    {
+      "displayName": "Showcase Samples",
+      "description": "Immrsiv showcase scenes: Locomotion, Sliders and Handles, Throwing.",
+      "path": "Samples~/ShowcaseSamples"
+    }
+  ]
 }
