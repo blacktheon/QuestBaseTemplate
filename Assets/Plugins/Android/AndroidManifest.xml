@@ -10,7 +10,7 @@
       <meta-data android:name="com.oculus.vr.focusaware" android:value="true" />
     </activity>
     <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
-    <meta-data android:name="com.oculus.ossplash.background" android:value="black" />
+    <meta-data android:name="com.oculus.ossplash.background" android:value="passthrough-contextual" />
     <meta-data android:name="com.oculus.telemetry.project_guid" android:value="f611913e-047c-46a1-8a7e-fb5de0e1db65" />
     <meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|questpro|quest3|quest3s" tools:replace="android:value" />
     <meta-data android:name="com.oculus.handtracking.frequency" android:value="HIGH" />
@@ -23,4 +23,5 @@
   <uses-permission android:name="com.oculus.permission.USE_SCENE" />
   <uses-feature android:name="com.oculus.feature.RENDER_MODEL" />
   <uses-permission android:name="com.oculus.permission.RENDER_MODEL" />
+  <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="false" />
 </manifest>
