@@ -22,6 +22,7 @@ namespace Immrsiv.QuestSetup.Editor
 
         public override void Fix()
         {
+            if (Directory.Exists(EssentialsFolder)) return;
             // com.unity.ugui (this project's TMP package, b95364aab964) does not expose
             // TMPro.TMP_PackageResourceImporter (that was a legacy standalone TMP class).
             // The ugui equivalent is TMPro.TMP_PackageUtilities.ImportEssentialResources()

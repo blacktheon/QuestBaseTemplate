@@ -30,6 +30,9 @@ namespace Immrsiv.QuestSetup.Editor
             // Our ExampleScenes bundle keeps Meta's GUIDs; importing Meta's own
             // "Example Scenes" sample alongside creates GUID conflicts.
             if (!Directory.Exists("Assets/Samples")) return false;
+            // Match by prefix rather than full literal name: Meta's real folder name
+            // contains a zero-width character before "SDK", so the full string cannot
+            // safely be typed here. Prefix "Meta XR Interaction" is stable and unique.
             return Directory.GetDirectories("Assets/Samples").Any(d =>
                 Path.GetFileName(d).StartsWith("Meta XR Interaction") &&
                 !Path.GetFileName(d).Contains("Essentials"));
