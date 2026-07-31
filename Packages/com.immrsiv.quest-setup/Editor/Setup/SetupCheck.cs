@@ -23,6 +23,7 @@ namespace Immrsiv.QuestSetup.Editor
             new XRLoaderCheck(),
             new OpenXRFeaturesCheck(),
             new RenderModeCheck(),
+            new MetaProjectSetupCheck(),
         };
     }
 }
