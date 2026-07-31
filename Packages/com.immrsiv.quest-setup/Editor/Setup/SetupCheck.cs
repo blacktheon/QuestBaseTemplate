@@ -21,6 +21,8 @@ namespace Immrsiv.QuestSetup.Editor
             // Order = Fix All execution order. Tasks 2-8 append here.
             new ViveLayerKillSwitchCheck(),
             new XRLoaderCheck(),
+            new OpenXRFeaturesCheck(),
+            new RenderModeCheck(),
         };
     }
 }
