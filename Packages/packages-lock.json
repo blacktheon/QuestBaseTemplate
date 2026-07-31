@@ -1,5 +1,16 @@
 {
   "dependencies": {
+    "com.immrsiv.quest-setup": {
+      "version": "file:com.immrsiv.quest-setup",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.meta.xr.sdk.all": "205.0.0",
+        "com.unity.xr.openxr": "1.17.0",
+        "com.unity.render-pipelines.universal": "17.3.0",
+        "com.unity.inputsystem": "1.19.0"
+      }
+    },
     "com.meta.xr.mrutilitykit": {
       "version": "205.0.0",
       "depth": 1,

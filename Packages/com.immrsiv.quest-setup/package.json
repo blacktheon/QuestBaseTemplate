@@ -1,0 +1,17 @@
+{
+  "name": "com.immrsiv.quest-setup",
+  "version": "1.0.0",
+  "displayName": "Immrsiv Quest Setup",
+  "description": "Internal Quest base template: pinned Meta XR SDK dependencies, curated interaction/showcase samples, and a project setup window that configures any Unity 6 URP project for Meta Quest development.",
+  "unity": "6000.3",
+  "author": {
+    "name": "Eugene",
+    "url": "https://github.com/blacktheon/QuestBaseTemplate"
+  },
+  "dependencies": {
+    "com.meta.xr.sdk.all": "205.0.0",
+    "com.unity.xr.openxr": "1.17.0",
+    "com.unity.render-pipelines.universal": "17.3.0",
+    "com.unity.inputsystem": "1.19.0"
+  }
+}
