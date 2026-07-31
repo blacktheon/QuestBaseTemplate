@@ -54,6 +54,8 @@ The setup window audits your project against this template's reference configura
 | Universal Render Pipeline | 17.3.0 | UPM dependency |
 | Input System | 1.19.0 | UPM dependency |
 
+> UPM dependencies guarantee *at least* these versions. Check 10 (advisory) warns when a project has drifted from the blessed baseline.
+
 Plus two curated sample sets, imported for you by the setup window:
 
 | Sample | Contents |
@@ -74,6 +76,7 @@ Plus two curated sample sets, imported for you by the setup window:
 | 7 | Android player | minSdk 32 · ARM64 · IL2CPP · Vulkan only · ASTC textures · Landscape Left |
 | 8 | Samples | Both Immrsiv sample sets imported (with duplicate-GUID guard against Meta's own "Example Scenes") |
 | 9 | TextMesh Pro | Essential resources imported *(advisory)* |
+| 10 | Baseline versions | Unity 6000.3 stream + blessed package versions *(advisory — reports drift, never auto-changes versions)* |
 
 ---
 
@@ -100,6 +103,7 @@ Plus two curated sample sets, imported for you by the setup window:
 - **Editor testing (Quest Link):** put the headset on with Link active, then press Play. If XR fails to initialize with VIVE Hub installed, that's what check #1 fixes.
 - **Blessing a new Meta SDK:** update the versions in `package.json`, re-test this template, run `Immrsiv → Quest Setup Dev → Sync Samples From This Project`, update `CHANGELOG.md`, tag a release.
 - **CI / automation:** every check is scriptable in batch mode — `SetupCLI.RunChecks` (exit 1 on failure) and `SetupCLI.FixAll`.
+- **CI / batch mode:** Meta's Project Setup fixes apply asynchronously — in batch mode run `SetupCLI.FixAll` twice (or `FixAll` then `RunChecks`) to let them land and verify.
 
 ## 📚 More documentation
 

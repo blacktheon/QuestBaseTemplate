@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Immrsiv.QuestSetup.Editor
 {
     /// <summary>Batch entries: RunChecks exits 1 if any non-advisory check fails;
-    /// FixAll fixes every failing non-advisory check then exits 0.
+    /// FixAll fixes every failing check (advisory included) then exits 0.
     /// RunChecksInternal is the reusable, non-exiting core (also used by verification).</summary>
     public static class SetupCLI
     {

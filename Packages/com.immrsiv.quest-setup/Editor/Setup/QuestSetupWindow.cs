@@ -44,7 +44,6 @@ namespace Immrsiv.QuestSetup.Editor
                 if (!ok && !check.IsAdvisory) failing++;
                 if (ok) _fixErrors.Remove(check);
             }
-            EditorPrefs.SetBool(SetupKeys.CompleteKey, failing == 0);
         }
 
         void OnGUI()
@@ -122,9 +121,6 @@ namespace Immrsiv.QuestSetup.Editor
 
         /// <summary>Set once the window has auto-opened for this project.</summary>
         public static string ShownKey => "Immrsiv.QuestSetup.SetupShown." + ProjectKey;
-
-        /// <summary>True while every non-advisory check passes (refreshed on evaluate).</summary>
-        public static string CompleteKey => "Immrsiv.QuestSetup.SetupComplete." + ProjectKey;
     }
 
     /// <summary>Opens the setup window once per project after the package lands.</summary>

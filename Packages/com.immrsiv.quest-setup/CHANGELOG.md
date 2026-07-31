@@ -8,3 +8,4 @@
 - Bundled samples: Interaction Example Scenes (with Immrsiv hand/button interaction fixes), Showcase Samples (Locomotion, Sliders and Handles, Throwing).
 - VIVE Hub OpenXR implicit-layer kill switch (editor-process scope).
 - Multi Pass render mode enforcement on Standalone (Quest Link one-eye-rendering fix).
+- Advisory baseline-versions check (reports Unity/package drift from the blessed baseline; UPM dependencies enforce minimums, not exact pins).

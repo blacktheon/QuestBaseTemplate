@@ -28,6 +28,7 @@ namespace Immrsiv.QuestSetup.Editor
             new AndroidPlayerCheck(),
             new SamplesImportedCheck(),
             new TmpEssentialsCheck(),
+            new BaselineVersionsCheck(),
         };
     }
 }

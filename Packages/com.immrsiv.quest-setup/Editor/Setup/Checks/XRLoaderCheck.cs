@@ -60,6 +60,7 @@ namespace Immrsiv.QuestSetup.Editor
                 settings.InitManagerOnStart = true;
                 EditorUtility.SetDirty(settings);
             }
+            EditorUtility.SetDirty(perBuildTarget);
             AssetDatabase.SaveAssets();
         }
 
