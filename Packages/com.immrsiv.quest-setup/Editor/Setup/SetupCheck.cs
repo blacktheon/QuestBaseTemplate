@@ -19,6 +19,7 @@ namespace Immrsiv.QuestSetup.Editor
         public static List<SetupCheck> CreateAll() => new List<SetupCheck>
         {
             // Order = Fix All execution order. Tasks 2-8 append here.
+            new ViveLayerKillSwitchCheck(),
         };
     }
 }
