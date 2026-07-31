@@ -16,7 +16,9 @@ namespace Immrsiv.QuestSetup.Editor
     ///   GetTasks(BuildTargetGroup) - line 310, internal static.
     ///   FixAllAsync(BuildTargetGroup) - line 558, public static, returns Task.
     ///   OVRConfigurationTask.Level - property returning OptionalLambdaType, call GetValue(group) on it.
-    ///   OVRConfigurationTask.IsDone - property returning Func&lt;BuildTargetGroup, bool&gt;, invoke as delegate.
+    ///   OVRConfigurationTask.IsDone - property (NOT a method) returning Func&lt;BuildTargetGroup, bool&gt;;
+    ///     get the property value, cast to Delegate, and call DynamicInvoke(group).
+    ///     If the delegate cannot be obtained, Evaluate returns false immediately (hard degradation).
     /// </summary>
     public class MetaProjectSetupCheck : SetupCheck
     {
@@ -80,7 +82,9 @@ namespace Immrsiv.QuestSetup.Editor
                             ?.Invoke(task, new object[] { group })?.ToString();
                     }
 
-                    // IsDone: property returning Func<BuildTargetGroup, bool>. Invoke the delegate.
+                    // IsDone: property (NOT a method) returning Func<BuildTargetGroup, bool>.
+                    // Get the property value, cast to Delegate, and call DynamicInvoke(group).
+                    // If the delegate cannot be obtained (SDK API moved), stop and report FAIL loudly.
                     bool? isDoneResult = null;
                     var isDoneProp = t.GetProperty("IsDone",
                         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -90,13 +94,11 @@ namespace Immrsiv.QuestSetup.Editor
                         if (isDoneDelegate != null)
                             isDoneResult = isDoneDelegate.DynamicInvoke(group) as bool?;
                     }
-                    // Fallback: try IsDone as a regular method
+
                     if (isDoneResult == null)
                     {
-                        var isDoneMethod = t.GetMethod("IsDone",
-                            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                        if (isDoneMethod != null)
-                            isDoneResult = isDoneMethod.Invoke(task, new object[] { group }) as bool?;
+                        details = "OVRConfigurationTask.IsDone could not be read (Meta SDK API moved) - fix manually via Meta > Tools > Project Setup Tool.";
+                        return false;
                     }
 
                     if (levelStr == "Required" && isDoneResult is bool done && !done)
