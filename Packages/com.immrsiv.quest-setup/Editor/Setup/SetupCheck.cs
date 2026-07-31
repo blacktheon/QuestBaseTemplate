@@ -24,6 +24,8 @@ namespace Immrsiv.QuestSetup.Editor
             new OpenXRFeaturesCheck(),
             new RenderModeCheck(),
             new MetaProjectSetupCheck(),
+            new ColorSpaceCheck(),
+            new AndroidPlayerCheck(),
         };
     }
 }
