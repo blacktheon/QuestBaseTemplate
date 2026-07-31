@@ -49,6 +49,7 @@ namespace Immrsiv.QuestSetup.Editor
 
         void OnGUI()
         {
+            if (_checks == null) return;
             EditorGUILayout.HelpBox(
                 "Immrsiv Quest Setup - project requirements for Meta Quest. Nothing changes without a click.\n" +
                 "Sample imports reload scripts: keep clicking Fix All until every row is green (usually twice).",
