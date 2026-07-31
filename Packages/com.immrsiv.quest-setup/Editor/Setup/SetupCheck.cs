@@ -26,6 +26,8 @@ namespace Immrsiv.QuestSetup.Editor
             new MetaProjectSetupCheck(),
             new ColorSpaceCheck(),
             new AndroidPlayerCheck(),
+            new SamplesImportedCheck(),
+            new TmpEssentialsCheck(),
         };
     }
 }
