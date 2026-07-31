@@ -22,6 +22,7 @@ namespace Immrsiv.QuestSetup.Editor
         public static void Sync()
         {
             var pkg = UnityEditor.PackageManager.PackageInfo.FindForPackageName("com.immrsiv.quest-setup");
+            if (pkg == null) { Debug.LogError("[SampleSync] com.immrsiv.quest-setup package not found."); return; }
             var samplesRoot = Path.Combine(pkg.resolvedPath, "Samples~");
 
             var sdkDir = Directory.GetDirectories("Assets/Samples")
@@ -31,6 +32,7 @@ namespace Immrsiv.QuestSetup.Editor
             var exampleScenes = Directory.GetDirectories(sdkDir).Select(v => Path.Combine(v, "Example Scenes"))
                 .FirstOrDefault(Directory.Exists);
             if (exampleScenes == null) { Debug.LogError("[SampleSync] 'Example Scenes' not found in " + sdkDir); return; }
+            if (!Directory.Exists("Assets/ShowcaseSamples")) { Debug.LogError("[SampleSync] Assets/ShowcaseSamples not found."); return; }
 
             CopyTree(exampleScenes, Path.Combine(samplesRoot, "ExampleScenes"));
             CopyTree("Assets/ShowcaseSamples", Path.Combine(samplesRoot, "ShowcaseSamples"));
@@ -52,7 +54,7 @@ namespace Immrsiv.QuestSetup.Editor
                 files++;
                 bytes += new FileInfo(file).Length;
             }
-            Debug.Log($"[SampleSync] {source} -> {dest}: {files} files, {bytes / (1024 * 1024)} MB");
+            Debug.Log($"[SampleSync] {source} -> {dest}: {files} files, {bytes / 1024.0 / 1024.0:F1} MB");
         }
     }
 }
