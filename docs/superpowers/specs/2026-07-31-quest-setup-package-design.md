@@ -6,9 +6,9 @@
 
 ## 1. Overview
 
-A team-internal UPM package (working name `com.dsta.quest-setup`, display name "DSTA Quest Setup") that converts any existing Unity 6 URP project into the team's blessed Meta Quest baseline. It provides:
+A team-internal UPM package (`com.immrsiv.quest-setup`, display name "Immrsiv Quest Setup") that converts any existing Unity 6 URP project into the team's blessed Meta Quest baseline. It provides:
 
-- A **Quest Setup window** (`Tools > DSTA > Quest Setup`) showing a checklist of rules with per-item **Fix** buttons and a **Fix All** pipeline.
+- A **Quest Setup window** (`Tools > Immrsiv > Quest Setup`) showing a checklist of rules with per-item **Fix** buttons and a **Fix All** pipeline.
 - **Pinned package installation** — the exact package versions the team has blessed.
 - **Bundled samples** — the curated content currently maintained in this template project's `Assets/Samples` and `Assets/ShowcaseSamples`, shipped as UPM package samples.
 - **Machine-quirk fixes** discovered in production (VIVE OpenXR layer conflict, editor render mode) baked in as rules.
@@ -39,12 +39,12 @@ A team-internal UPM package (working name `com.dsta.quest-setup`, display name "
 ## 3. Package layout
 
 ```
-com.dsta.quest-setup/
+com.immrsiv.quest-setup/
 ├── package.json                  # name, version, unity 6000.3, samples[] declarations
 ├── CHANGELOG.md
 ├── README.md                     # install URL, usage, blessing procedure
 ├── Editor/
-│   ├── DSTA.QuestSetup.Editor.asmdef        # editor-only; NO Meta/OpenXR references
+│   ├── Immrsiv.QuestSetup.Editor.asmdef     # editor-only; NO Meta/OpenXR references
 │   ├── Core/
 │   │   ├── BaselineVersions.cs   # single source of truth for pinned versions
 │   │   ├── QuestSetupRuleAttribute.cs
@@ -60,7 +60,7 @@ com.dsta.quest-setup/
 │   │   ├── SamplesImportedRules.cs
 │   │   └── ViveLayerKillSwitch.cs   # also hosts the [InitializeOnLoad] env-var fix
 │   ├── RulesMeta/
-│   │   ├── DSTA.QuestSetup.Editor.MetaRules.asmdef
+│   │   ├── Immrsiv.QuestSetup.Editor.MetaRules.asmdef
 │   │   │     # references Meta/OpenXR asmdefs; uses versionDefines +
 │   │   │     # defineConstraints so it only compiles once the SDK is installed
 │   │   ├── XrLoaderRules.cs
@@ -83,7 +83,7 @@ com.dsta.quest-setup/
     "description": "Curated Meta XR Interaction SDK sample content (pinned SDK version).",
     "path": "Samples~/InteractionSamples" },
   { "displayName": "Showcase Samples",
-    "description": "DSTA showcase scenes: Locomotion, Sliders and Handles, Throwing.",
+    "description": "Immrsiv showcase scenes: Locomotion, Sliders and Handles, Throwing.",
     "path": "Samples~/ShowcaseSamples" }
 ]
 ```
@@ -165,7 +165,7 @@ Rule list is expected to grow; each new discovery (like this week's two) becomes
 
 ## 8. Window UX
 
-- UI Toolkit `EditorWindow`, menu `Tools > DSTA > Quest Setup`.
+- UI Toolkit `EditorWindow`, menu `Tools > Immrsiv > Quest Setup`.
 - Header: package version, blessed baseline summary, **Fix All** button, Re-scan button.
 - Body: rules grouped by Category; each row = status icon (green check / yellow warning / red cross / grey "waiting for SDK install"), description, Fix button when unsatisfied and auto-fixable.
 - Meta-dependent rules before the SDK is installed appear as a single grey placeholder row ("6 checks become available after Meta SDK installs").
@@ -179,14 +179,14 @@ The template project (this repo) remains the authoring home of the curated conte
 - `Assets/Samples/` — Meta XR Interaction SDK + Essentials imports (currently 205.0.0), possibly modified/fixed by the team.
 - `Assets/ShowcaseSamples/` — Locomotion, SlidersandHandles, Throwing.
 
-A **sync tool** lives in the package repo (plain editor script usable inside the template project): `Tools > DSTA > Quest Setup Dev > Sync Samples From This Project`. It:
+A **sync tool** lives in the package repo (plain editor script usable inside the template project): `Tools > Immrsiv > Quest Setup Dev > Sync Samples From This Project`. It:
 
 1. Copies `Assets/Samples/*` → `<package repo>/Samples~/InteractionSamples/` and `Assets/ShowcaseSamples/*` → `Samples~/ShowcaseSamples/`, **including `.meta` files** (GUIDs preserved so cross-references survive).
 2. Copies folder names byte-for-byte — the Meta folder name contains a zero-width character (`Meta XR Interaction ​SDK`), so names must never be hand-typed.
 3. Reports total size and file count for the changelog.
 
 **Decisions:**
-- **GUIDs are preserved.** Consequence: a consumer must not import the same samples from Meta's own package UI *and* ours (GUID collisions). README documents: use our samples, they replace Meta's. Our imported path (`Assets/Samples/DSTA Quest Setup/...`) also differs from Meta's, making the double-import visible if it happens.
+- **GUIDs are preserved.** Consequence: a consumer must not import the same samples from Meta's own package UI *and* ours (GUID collisions). README documents: use our samples, they replace Meta's. Our imported path (`Assets/Samples/Immrsiv Quest Setup/...`) also differs from Meta's, making the double-import visible if it happens.
 - **Plain git for now, no LFS.** The Interaction samples are tens-to-hundreds of MB; acceptable for an internal repo. If clone times hurt, migrate `Samples~/` to git-LFS in a later release (transparent to consumers).
 
 ## 10. Error handling
