@@ -29,14 +29,18 @@ A team-internal UPM package (`com.immrsiv.quest-setup`, display name "Immrsiv Qu
 
 ## 2. Distribution and versioning
 
-- Package lives in its own git repository on the company git host.
-- Consumers install via Package Manager → *Add package from git URL* → `https://<host>/<org>/quest-setup.git#v1.0.0`.
+Mirrors the proven `VRBaseTemplate` / `com.immrsiv.vive-vrbase` convention: **the package is embedded in this template repository** at `Packages/com.immrsiv.quest-setup`. The repo is two things at once — a fork-and-go template project, and the host of the distributable package.
+
+- Consumers install via Package Manager → *Install package from git URL* → `https://<host>/<org>/QuestBaseTemplate.git?path=Packages/com.immrsiv.quest-setup` (optionally `#vX.Y.Z`).
 - Releases are annotated tags `vX.Y.Z`; `CHANGELOG.md` documents each blessed baseline.
 - Updating a project = editing the tag in `Packages/manifest.json` and re-running Fix All.
+- Because the package is embedded, developing it happens live inside this template project — no separate repo to sync.
 
 **Blessing a new baseline** (e.g., a new Meta SDK): update `BaselineVersions`, re-sync samples from the template project, verify on a scratch project, tag a release.
 
 ## 3. Package layout
+
+Embedded at `QuestBaseTemplate/Packages/com.immrsiv.quest-setup/`:
 
 ```
 com.immrsiv.quest-setup/
@@ -71,22 +75,24 @@ com.immrsiv.quest-setup/
 │       ├── QuestSetupWindow.cs
 │       └── QuestSetupWindow.uxml/.uss (UI Toolkit)
 └── Samples~/
-    ├── InteractionSamples/       # synced copy of template Assets/Samples/*
-    └── ShowcaseSamples/          # synced copy of template Assets/ShowcaseSamples/*
+    ├── ExampleScenes/            # synced from Assets/Samples/<Meta XR Interaction SDK>/205.0.0/Example Scenes (~13 MB)
+    └── ShowcaseSamples/          # synced from Assets/ShowcaseSamples (~88 MB)
 ```
 
 ### package.json samples declaration
 
 ```json
 "samples": [
-  { "displayName": "Meta Interaction Samples",
-    "description": "Curated Meta XR Interaction SDK sample content (pinned SDK version).",
-    "path": "Samples~/InteractionSamples" },
+  { "displayName": "Interaction Example Scenes",
+    "description": "Meta XR Interaction SDK example scenes (pinned SDK version).",
+    "path": "Samples~/ExampleScenes" },
   { "displayName": "Showcase Samples",
     "description": "Immrsiv showcase scenes: Locomotion, Sliders and Handles, Throwing.",
     "path": "Samples~/ShowcaseSamples" }
 ]
 ```
+
+Note: `Meta XR Interaction SDK Essentials` (the large shared-asset sample both sets depend on) is **not** bundled — a Phase 3 rule imports it from Meta's own package via the Package Manager sample API, keeping canonical GUIDs and our repo small.
 
 ## 4. Pinned baseline (initial values)
 
@@ -158,8 +164,10 @@ The hard part: installing packages and importing samples trigger recompiles/doma
 11. **VIVE OpenXR implicit-layer kill switch** (Required, editor-process-scoped). The package's always-compiled assembly contains the `[InitializeOnLoad]` class that sets the four `DISABLE_XR_APILAYER_VIVE_*_1` environment variables — the fix ships with the package itself, no per-project script. The rule reports whether VIVE Hub layers are registered on the machine (registry read) and confirms the kill switch is active; informational green when VIVE Hub isn't installed.
 
 **Phase 3 — Samples**
-12. "Meta Interaction Samples" imported at current package version (Recommended, auto-fix).
-13. "Showcase Samples" imported at current package version (Recommended, auto-fix).
+12. "Meta XR Interaction SDK Essentials" imported from Meta's own package (Required for the bundled samples to work, auto-fix via Package Manager sample API).
+13. "Interaction Example Scenes" imported at current package version (Recommended, auto-fix).
+14. "Showcase Samples" imported at current package version (Recommended, auto-fix).
+15. TextMesh Pro essentials present (Recommended, auto-fix).
 
 Rule list is expected to grow; each new discovery (like this week's two) becomes one class in `Rules/` or `RulesMeta/`.
 
@@ -179,9 +187,9 @@ The template project (this repo) remains the authoring home of the curated conte
 - `Assets/Samples/` — Meta XR Interaction SDK + Essentials imports (currently 205.0.0), possibly modified/fixed by the team.
 - `Assets/ShowcaseSamples/` — Locomotion, SlidersandHandles, Throwing.
 
-A **sync tool** lives in the package repo (plain editor script usable inside the template project): `Tools > Immrsiv > Quest Setup Dev > Sync Samples From This Project`. It:
+A **sync tool** ships in the package's editor assembly (menu visible only when the package is embedded): `Tools > Immrsiv > Quest Setup Dev > Sync Samples From This Project`. It:
 
-1. Copies `Assets/Samples/*` → `<package repo>/Samples~/InteractionSamples/` and `Assets/ShowcaseSamples/*` → `Samples~/ShowcaseSamples/`, **including `.meta` files** (GUIDs preserved so cross-references survive).
+1. Copies `Assets/Samples/<Meta XR Interaction SDK>/205.0.0/Example Scenes/*` → `Packages/com.immrsiv.quest-setup/Samples~/ExampleScenes/` and `Assets/ShowcaseSamples/*` → `Samples~/ShowcaseSamples/`, **including `.meta` files** (GUIDs preserved so cross-references survive).
 2. Copies folder names byte-for-byte — the Meta folder name contains a zero-width character (`Meta XR Interaction ​SDK`), so names must never be hand-typed.
 3. Reports total size and file count for the changelog.
 
@@ -216,7 +224,11 @@ A **sync tool** lives in the package repo (plain editor script usable inside the
 | Zero-width chars / exotic folder names | Sync tool copies names programmatically |
 | Env-var kill switch runs on machines without VIVE | Harmless no-op (variables reference layers that don't exist) |
 
-## 13. Consumer walkthrough (acceptance narrative)
+## 13. Template repository README
+
+The template repo gets a `README.md` in the exact format of `VRBaseTemplate/README.md` (the team's established style): title + one-line pitch, shields.io badges (Unity, URP, Meta SDK version, target platform, internal-use), "Two ways to start" (fork the template / install the package by git URL with `?path=`), "What you get" tables (packages, samples, the rule checklist), repository layout tree, notes & gotchas, links to package README and specs/plans, maintainer footer. Content adapted to Quest: Meta XR SDK 205, Quest 3 target, Quest Link editor testing, the VIVE-layer and Multi Pass gotchas.
+
+## 14. Consumer walkthrough (acceptance narrative)
 
 1. Developer has an existing URP project. Adds the package by git URL.
 2. Window auto-opens on first install (one-time `SessionState` flag), shows mostly red.
