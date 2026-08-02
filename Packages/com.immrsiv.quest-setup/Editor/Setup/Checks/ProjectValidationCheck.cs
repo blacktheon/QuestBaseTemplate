@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Unity.XR.CoreUtils.Editor;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Immrsiv.QuestSetup.Editor
@@ -87,6 +88,10 @@ namespace Immrsiv.QuestSetup.Editor
             bool poseControlOn = OptionalRulePrefs.PoseControlEnabled;
             bool stickControlOn = OptionalRulePrefs.StickControlEnabled;
 
+            // Parity with BuildValidator.GetCurrentValidationIssues (lines 81-86): skip scene-only
+            // rules when the editor is in Prefab Stage, as the SDK's own window does.
+            bool inPrefabStage = PrefabStageUtility.GetCurrentPrefabStage() != null;
+
             int totalFixable = 0;
             var groupSummaries = new List<string>();
 
@@ -109,6 +114,10 @@ namespace Immrsiv.QuestSetup.Editor
                 {
                     // Skip rules not applicable right now
                     if (rule.IsRuleEnabled == null || !rule.IsRuleEnabled.Invoke())
+                        continue;
+
+                    // Parity with BuildValidator: skip scene-only rules while in Prefab Stage.
+                    if (inPrefabStage && rule.SceneOnlyValidation)
                         continue;
 
                     // Skip passing rules
@@ -199,6 +208,10 @@ namespace Immrsiv.QuestSetup.Editor
             bool poseControlOn = OptionalRulePrefs.PoseControlEnabled;
             bool stickControlOn = OptionalRulePrefs.StickControlEnabled;
 
+            // Parity with BuildValidator.GetCurrentValidationIssues (lines 81-86): skip scene-only
+            // rules when the editor is in Prefab Stage, as the SDK's own window does.
+            bool inPrefabStage = PrefabStageUtility.GetCurrentPrefabStage() != null;
+
             int fixedCount = 0;
 
             foreach (var group in Groups)
@@ -211,6 +224,10 @@ namespace Immrsiv.QuestSetup.Editor
                 foreach (var rule in rules)
                 {
                     if (rule.IsRuleEnabled == null || !rule.IsRuleEnabled.Invoke())
+                        continue;
+
+                    // Parity with BuildValidator: skip scene-only rules while in Prefab Stage.
+                    if (inPrefabStage && rule.SceneOnlyValidation)
                         continue;
 
                     bool fails = rule.CheckPredicate == null || !rule.CheckPredicate.Invoke();
