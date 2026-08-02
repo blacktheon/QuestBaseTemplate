@@ -6,6 +6,7 @@
         "Unity.XR.Management.Editor",
         "Unity.XR.OpenXR",
         "Unity.XR.OpenXR.Editor",
+        "Unity.XR.CoreUtils.Editor",
         "Oculus.VR",
         "Oculus.VR.Editor",
         "Unity.TextMeshPro.Editor"

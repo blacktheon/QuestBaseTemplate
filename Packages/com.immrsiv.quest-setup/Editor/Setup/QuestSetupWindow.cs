@@ -82,6 +82,30 @@ namespace Immrsiv.QuestSetup.Editor
             }
             EditorGUILayout.EndScrollView();
 
+            // Optional input-system migration toggles (ProjectValidationCheck exclusion opt-in).
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField("Optional input-system migrations (may break existing input code)",
+                EditorStyles.boldLabel);
+            bool poseOn = OptionalRulePrefs.PoseControlEnabled;
+            bool poseOnNew = EditorGUILayout.ToggleLeft(
+                "Migrate PoseControl → InputSystem.XR.PoseControl (OpenXR deprecation)",
+                poseOn);
+            if (poseOnNew != poseOn)
+            {
+                OptionalRulePrefs.PoseControlEnabled = poseOnNew;
+                RefreshAll();
+            }
+            bool stickOn = OptionalRulePrefs.StickControlEnabled;
+            bool stickOnNew = EditorGUILayout.ToggleLeft(
+                "Migrate Vector2Control thumbsticks → StickControl (OpenXR deprecation)",
+                stickOn);
+            if (stickOnNew != stickOn)
+            {
+                OptionalRulePrefs.StickControlEnabled = stickOnNew;
+                RefreshAll();
+            }
+            EditorGUILayout.Space(4);
+
             using (new EditorGUI.DisabledScope(failing == 0))
             {
                 if (GUILayout.Button("Fix All", GUILayout.Height(28)))
