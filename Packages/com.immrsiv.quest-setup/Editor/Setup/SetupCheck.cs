@@ -18,12 +18,18 @@ namespace Immrsiv.QuestSetup.Editor
     {
         public static List<SetupCheck> CreateAll() => new List<SetupCheck>
         {
-            // Order = Fix All execution order. Tasks 2-8 append here.
+            // Order = Fix All execution order (spec §D, v1.1).
+            // BuildTargetCheck runs first so all later per-target checks evaluate
+            // against the correct active target.  RenderModeCheck runs AFTER
+            // MetaProjectSetupCheck and ProjectValidationCheck so our policy always
+            // wins (we suppress Meta's SPI recommendation on Standalone via ignore).
+            new BuildTargetCheck(),
             new ViveLayerKillSwitchCheck(),
             new XRLoaderCheck(),
             new OpenXRFeaturesCheck(),
-            new RenderModeCheck(),
             new MetaProjectSetupCheck(),
+            new ProjectValidationCheck(),
+            new RenderModeCheck(),
             new ColorSpaceCheck(),
             new AndroidPlayerCheck(),
             new SamplesImportedCheck(),

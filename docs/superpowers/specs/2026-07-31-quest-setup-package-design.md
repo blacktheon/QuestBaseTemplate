@@ -224,3 +224,37 @@ The template repo gets a `README.md` in the exact format of `VRBaseTemplate/READ
 3. Clicks **Fix All** → Phase 1 installs pinned packages (recompile) → Phase 2 flips all settings (including Multi Pass on Standalone and the VIVE kill switch activating) → Phase 3 imports both sample sets.
 4. Checklist is green. Developer opens a showcase scene, presses Play with Quest Link — both eyes render, hands and controllers work. Builds an APK for device.
 5. Total human interaction: add URL, one click, wait.
+
+---
+
+# v1.1 Amendment (2026-08-02) — install-test feedback round
+
+A real install test (git URL into a fresh non-VR Unity 6000.3.19f1 URP project) surfaced three gaps. v1.1 adds three checks and resume infrastructure. Policy decisions below were delegated by the user ("decide policy" / "pick a per-target policy").
+
+## A. Active build target check (new check, FIRST in registry)
+
+- `BuildTargetCheck`: Evaluate = `EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android`; Fix = `EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android)`.
+- Runs FIRST — later fixes are per-target and several tools evaluate against the active target.
+- **Resume:** the switch triggers a domain reload. Fix All sets a `SessionState` flag before fixing; an `[InitializeOnLoad]` continuation (also listening to `EditorApplication.delayCall` after reload) reopens the window and re-runs Fix All for remaining failing checks until none remain or a fix fails. This replaces the pure "click Fix All again" UX for the switch case (which silently stopped).
+- **Headless CLI policy:** batch runs must pass `-buildTarget Android` on the Unity command line (documented in both READMEs); `SetupCLI.FixAll` does NOT switch targets mid-batch — the check FAILs loudly with that instruction if the batch target is wrong.
+
+## B. Meta XR Project Setup Tool parity (extend MetaProjectSetupCheck)
+
+- Evaluate now counts ALL outstanding auto-fixable tasks (Required + Recommended) for BOTH Standalone and Android, not just Required; details shows the per-level count. Fix runs Meta's fix-all (the same API the tool's Fix All/Apply All buttons call) for both targets.
+- **Manual-only tasks policy:** tasks with no automatic fix (Data Use Checkup, app ID / Android package name) are EXCLUDED from the count and listed in the README as "manual, see docs". The package never invents a project-specific package name.
+- **Render-mode conflict policy (final):** Android = Single Pass Instanced (device, matches Meta recommendation); Standalone = Multi Pass (Quest Link one-eye sample-shader fix — non-negotiable). Meta's "Stereo Rendering Instancing" recommendation on Standalone is suppressed via Meta's own per-task ignore mechanism (persisted, applied programmatically by our check with a documented reason), so Meta's tab shows 0 outstanding. `RenderModeCheck` moves AFTER Meta/validation checks in registry order so our policy always wins the final word.
+
+## C. Unity XR Project Validation parity (new check)
+
+- `ProjectValidationCheck`: enumerates registered validation rules for BOTH build target groups (via `Unity.XR.CoreUtils.Editor.BuildValidator` / OpenXR's project validation API — implementer verifies the installed API surface first, as with Meta reflection) and invokes each failed rule's automatic FixIt — the programmatic Fix All equivalent.
+- Skips: rules without an automatic fix (reported as manual), rules that would conflict with the render-mode policy on Standalone (excluded with documented reason), and **[Optional]-flagged input-system rules** (`PoseControl → InputSystem.XR`, `Vector2Control → StickControl`) which can break existing input code.
+- Optional rules become two opt-in toggles in the Quest Setup window (EditorPrefs-backed, default OFF, excluded from Fix All and CLI).
+- Dedupe/ownership: overlapping settings (aniso, solver iterations, pinch, API layers, hand tracking, D3D11, HDR, MSAA) converge because all involved fixers are idempotent and our named checks (RenderMode, AndroidPlayer, …) run LAST in registry order and own the final state of anything they assert.
+
+## D. Registry order (v1.1)
+
+BuildTarget → ViveLayerKillSwitch → XRLoader → OpenXRFeatures → MetaProjectSetup → ProjectValidation → RenderMode → ColorSpace → AndroidPlayer → SamplesImported → TmpEssentials → BaselineVersions (12 checks).
+
+## E. Acceptance (v1.1)
+
+Fresh non-VR Unity 6 URP project → install package → Fix All (window, with automatic resume across the build-target switch) and separately `SetupCLI.FixAll` with `-buildTarget Android`: active platform Android; Meta XR Project Setup Tool 0 outstanding fixable items on both tabs (policy-suppressed SPI item shows as ignored, not outstanding); Project Validation 0 fixable issues on both tabs (optional input rules visible only when toggled); every item a named green check in the Quest Setup window. Version bumps to 1.1.0 with CHANGELOG entry.

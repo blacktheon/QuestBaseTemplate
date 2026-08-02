@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.0] - 2026-08-02
+
+### Added
+- **BuildTargetCheck** (check 1): verifies the active build target is Android before any per-target fixes run. Fix All resumes itself across the domain reload triggered by the build-target switch — one click completes the full setup pipeline.
+- **ProjectValidationCheck** (check 6): enumerates Unity XR Project Validation rules for both Standalone and Android, auto-fixes every fixable issue, skips render-mode-conflicting rules, and reports manual-only rules in details. Two optional input-system rules (PoseControl, Vector2Control) are exposed as opt-in toggles in the Quest Setup window (default OFF, excluded from Fix All and CLI).
+- **MetaProjectSetupCheck** extended to cover both Required and Recommended tasks on both Standalone and Android targets. Tasks without an automatic fix (Data Use Checkup, app ID / package name) are excluded from the outstanding count and documented as manual.
+
+### Changed
+- Registry reordered to binding spec §D order: BuildTarget → ViveLayerKillSwitch → XRLoader → OpenXRFeatures → MetaProjectSetup → ProjectValidation → RenderMode → ColorSpace → AndroidPlayer → SamplesImported → TmpEssentials → BaselineVersions. RenderModeCheck now runs **after** Meta and Validation checks so the Standalone Multi Pass policy always wins.
+- Fix All window behavior: the runner resumes itself across the build-target switch and sample-import domain reloads — one Fix All click completes the whole pipeline.
+
+### Policy
+- **Render mode:** Standalone = Multi Pass (Quest Link one-eye sample-shader fix — non-negotiable); Android = Single Pass Instanced (device, matches Meta recommendation). Meta's "Stereo Rendering Instancing" recommendation on Standalone is suppressed via Meta's own per-task ignore mechanism so Meta's tab shows 0 outstanding.
+- **Meta manual items:** Data Use Checkup and app ID / Android package name are project-specific; the package never sets these. They are excluded from the auto-fix count.
+- **Optional input rules:** PoseControl → InputSystem.XR and Vector2Control → StickControl are opt-in (default OFF) to avoid breaking existing input code.
+
 ## [1.0.0] - 2026-07-31
 
 ### Added
