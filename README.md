@@ -35,8 +35,8 @@ This repository is two things at once:
 2. The Quest Setup window opens automatically
    (or open it any time via  Immrsiv → Quest Setup)
 
-3. Click  Fix All  until every row is green (usually twice — sample
-   imports reload scripts in between)
+3. Click  Fix All  — one Fix All is enough. The window resumes itself
+   across the build-target switch and sample-import reloads.
 ```
 
 The setup window audits your project against this template's reference configuration and shows exactly what differs. **Nothing changes without a click.**
@@ -54,7 +54,7 @@ The setup window audits your project against this template's reference configura
 | Universal Render Pipeline | 17.3.0 | UPM dependency |
 | Input System | 1.19.0 | UPM dependency |
 
-> UPM dependencies guarantee *at least* these versions. Check 10 (advisory) warns when a project has drifted from the blessed baseline.
+> UPM dependencies guarantee *at least* these versions. Check 12 (advisory) warns when a project has drifted from the blessed baseline.
 
 Plus two curated sample sets, imported for you by the setup window:
 
@@ -65,18 +65,34 @@ Plus two curated sample sets, imported for you by the setup window:
 
 ### Project configuration — the checks
 
-| ✅ | Check | Enforced state |
+| # | Check | Enforced state |
 |---|---|---|
-| 1 | VIVE layer kill switch | VIVE Hub's implicit OpenXR layers disabled for the editor process (they break Quest Link XR init) |
-| 2 | XR Plug-in Management | OpenXR loader + initialize-on-startup for Standalone (Link) and Android (headset) |
-| 3 | OpenXR features | Meta XR feature group + Meta XR Feature + Touch Controller profile on both platforms |
-| 4 | Render mode | **Multi Pass on Standalone** (fixes Meta sample shaders rendering in the left eye only over Link) · Single Pass Instanced on Android |
-| 5 | Meta Project Setup Tool | No outstanding Required issues (Meta's own checklist, run for you) |
-| 6 | Color space | Linear |
-| 7 | Android player | minSdk 32 · ARM64 · IL2CPP · Vulkan only · ASTC textures · Landscape Left |
-| 8 | Samples | Both Immrsiv sample sets imported (with duplicate-GUID guard against Meta's own "Example Scenes") |
-| 9 | TextMesh Pro | Essential resources imported *(advisory)* |
-| 10 | Baseline versions | Unity 6000.3 stream + blessed package versions *(advisory — reports drift, never auto-changes versions)* |
+| 1 | Active build target: Android | Active build target must be Android; Fix switches it and the window resumes after the domain reload |
+| 2 | Machine: VIVE OpenXR implicit layers disabled | VIVE Hub's implicit OpenXR layers disabled for the editor process (they break Quest Link XR init) |
+| 3 | XR Plug-in Management: OpenXR enabled | OpenXR loader + initialize-on-startup for Standalone (Link) and Android (headset) |
+| 4 | OpenXR: Meta XR feature group + features + Touch Controller | Meta XR feature group + Meta XR Feature + Touch Controller profile on both platforms |
+| 5 | Meta Project Setup Tool: no outstanding Required/Recommended issues | All auto-fixable Required and Recommended items resolved for both Standalone and Android; manual items excluded (see below) |
+| 6 | Unity XR Project Validation: no outstanding fixable issues | All fixable XR validation rules resolved for both Standalone and Android; manual-only rules reported in details |
+| 7 | OpenXR render mode: Multi Pass on Standalone, Single Pass on Android | **Multi Pass on Standalone** (fixes Meta sample shaders rendering left-eye-only over Link); Single Pass Instanced on Android |
+| 8 | Color space: Linear | Linear color space |
+| 9 | Android player: minSdk 32, ARM64, IL2CPP, Vulkan only, ASTC, Landscape Left | minSdk 32 · ARM64 · IL2CPP · Vulkan only · ASTC textures · Landscape Left |
+| 10 | Immrsiv Quest Setup samples imported | Both Immrsiv sample sets imported (with duplicate-GUID guard against Meta's own "Example Scenes") |
+| 11 | TextMesh Pro essential resources imported | TMP Essential Resources imported *(advisory)* |
+| 12 | Baseline versions: blessed Unity stream and package versions | Unity 6000.3 stream + blessed package versions *(advisory — reports drift, never auto-changes versions)* |
+
+#### Manual steps Meta requires
+
+The package deliberately does not set these project-specific values:
+
+- **Data Use Checkup** — complete this in the Meta Developer Dashboard for your app.
+- **App ID / Android package name** — set your app's Meta App ID and Unity package name (`Edit → Project Settings → Meta XR`). These will always show as outstanding in Meta's Project Setup Tool until you fill them in.
+
+#### Render mode policy
+
+| Platform | Mode | Reason |
+|---|---|---|
+| **Standalone (Quest Link)** | Multi Pass | Fixes Meta sample shaders rendering in the left eye only. Non-negotiable; Meta's "Stereo Rendering Instancing" recommendation is suppressed via Meta's own ignore mechanism so Meta's tab shows 0 outstanding. |
+| **Android (headset)** | Single Pass Instanced | Device default; matches Meta recommendation. |
 
 ---
 
@@ -102,7 +118,7 @@ Plus two curated sample sets, imported for you by the setup window:
 - **Never import Meta's own "Example Scenes" sample in a consumer project** — the packaged "Interaction Example Scenes" are the same scenes (with fixes) under the same GUIDs. One or the other, not both.
 - **Editor testing (Quest Link):** put the headset on with Link active, then press Play. If XR fails to initialize with VIVE Hub installed, that's what check #1 fixes.
 - **Blessing a new Meta SDK:** update the versions in `package.json`, re-test this template, run `Immrsiv → Quest Setup Dev → Sync Samples From This Project`, update `CHANGELOG.md`, tag a release.
-- **CI / automation:** every check is scriptable in batch mode — `SetupCLI.RunChecks` (exit 1 on failure) and `SetupCLI.FixAll`.
+- **CI / automation:** every check is scriptable in batch mode — `SetupCLI.RunChecks` (exit 1 on failure) and `SetupCLI.FixAll`. Always pass `-buildTarget Android` on the Unity command line; the check fails loudly with that instruction if the batch target is wrong.
 - **CI / batch mode:** Meta's Project Setup fixes apply asynchronously — in batch mode run `SetupCLI.FixAll` twice (or `FixAll` then `RunChecks`) to let them land and verify.
 
 ## 📚 More documentation
