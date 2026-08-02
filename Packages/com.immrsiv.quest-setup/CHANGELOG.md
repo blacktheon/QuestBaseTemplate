@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2026-08-02
+
+### Fixed
+- Samples-imported check is now version-agnostic: Unity stamps sample imports with the package version (`Assets/Samples/Immrsiv Quest Setup/<version>/...`), so after a package update the check stayed red forever and re-importing would have duplicated GUIDs against the old copy. A sample folder under any version now satisfies the check (with a details note naming the stale version and how to refresh); Fix only imports samples that exist under no version.
+
 ## [1.1.0] - 2026-08-02
 
 ### Added
