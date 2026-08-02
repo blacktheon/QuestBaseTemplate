@@ -12,14 +12,23 @@ namespace Immrsiv.QuestSetup.Editor
     {
         public override string Label => "Active build target: Android";
 
+        static bool AndroidModuleInstalled =>
+            BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Android, BuildTarget.Android);
+
         public override bool Evaluate(out string details)
         {
             var active = EditorUserBuildSettings.activeBuildTarget;
-            details = active == BuildTarget.Android
-                ? "Active build target is Android."
-                : $"Active build target is {active} (want Android)." +
-                  (Application.isBatchMode ? " Batch mode: relaunch with -buildTarget Android." : "");
-            return active == BuildTarget.Android;
+            if (active == BuildTarget.Android)
+            {
+                details = "Active build target is Android.";
+                return true;
+            }
+            details = $"Active build target is {active} (want Android)." +
+                      (!AndroidModuleInstalled
+                          ? " Android Build Support is NOT installed - add it to this editor via Unity Hub first."
+                          : "") +
+                      (Application.isBatchMode ? " Batch mode: relaunch with -buildTarget Android." : "");
+            return false;
         }
 
         public override void Fix()
@@ -27,7 +36,12 @@ namespace Immrsiv.QuestSetup.Editor
             if (Application.isBatchMode)
                 throw new System.InvalidOperationException(
                     "Cannot switch build target in batch mode - relaunch Unity with -buildTarget Android.");
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+            if (!AndroidModuleInstalled)
+                throw new System.InvalidOperationException(
+                    "Android Build Support is not installed for this editor. Install it via Unity Hub (Installs > your editor > Add modules > Android Build Support), restart, then run Fix All again.");
+            if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android))
+                throw new System.InvalidOperationException(
+                    "SwitchActiveBuildTarget(Android) failed - see the console for Unity's reason, then run Fix All again.");
             // Triggers a domain reload; FixAllRunner's [InitializeOnLoad] continuation resumes.
         }
     }
