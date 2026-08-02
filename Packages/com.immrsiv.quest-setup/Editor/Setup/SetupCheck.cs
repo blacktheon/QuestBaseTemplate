@@ -18,7 +18,9 @@ namespace Immrsiv.QuestSetup.Editor
     {
         public static List<SetupCheck> CreateAll() => new List<SetupCheck>
         {
-            // Order = Fix All execution order. Tasks 2-8 append here.
+            // Order = Fix All execution order. BuildTargetCheck runs first so all
+            // later per-target checks evaluate against the correct active target.
+            new BuildTargetCheck(),
             new ViveLayerKillSwitchCheck(),
             new XRLoaderCheck(),
             new OpenXRFeaturesCheck(),

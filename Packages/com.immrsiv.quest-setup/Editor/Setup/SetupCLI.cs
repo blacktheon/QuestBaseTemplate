@@ -31,6 +31,7 @@ namespace Immrsiv.QuestSetup.Editor
         {
             foreach (var check in SetupCheckRegistry.CreateAll())
             {
+                if (check is BuildTargetCheck) continue; // batch: -buildTarget Android on the command line
                 bool ok;
                 try { ok = check.Evaluate(out _); } catch { ok = false; }
                 if (ok) continue;

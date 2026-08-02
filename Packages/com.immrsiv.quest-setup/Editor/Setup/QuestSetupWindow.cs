@@ -86,12 +86,7 @@ namespace Immrsiv.QuestSetup.Editor
             {
                 if (GUILayout.Button("Fix All", GUILayout.Height(28)))
                 {
-                    foreach (var check in _checks)
-                    {
-                        if (_results.TryGetValue(check, out var r) && r.ok) continue;
-                        RunFix(check);
-                    }
-                    RefreshAll();
+                    FixAllRunner.Start();
                 }
             }
             if (failing == 0)
