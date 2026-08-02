@@ -24,8 +24,9 @@ namespace Immrsiv.QuestSetup.Editor
     ///   GetTasks(BuildTargetGroup) - line 310, internal static.
     ///   FixAllAsync(BuildTargetGroup) - line 558, public static, returns Task.
     ///   OVRConfigurationTask.Level - property returning OptionalLambdaType, call GetValue(group) on it.
-    ///   OVRConfigurationTask.IsDone - property (NOT a method) returning Func&lt;BuildTargetGroup, bool&gt;;
-    ///     get the property value, cast to Delegate, and call DynamicInvoke(group).
+    ///   OVRConfigurationTask.IsDone - property getter returns the GetDoneState method group as a
+    ///     Func&lt;BuildTargetGroup,bool&gt; delegate (shares the task's internal done-cache); the
+    ///     reflection approach is: get the property value, cast to Delegate, call DynamicInvoke(group).
     ///     If the delegate cannot be obtained, Evaluate returns false immediately (hard degradation).
     ///   OVRConfigurationTask.IsIgnored(BuildTargetGroup) - public instance method (accessible via reflection).
     ///   OVRConfigurationTask.SetIgnored(BuildTargetGroup, bool) - public instance method (accessible via reflection).
@@ -98,6 +99,16 @@ namespace Immrsiv.QuestSetup.Editor
                     if (!isRequired && !isRecommended)
                         continue;
 
+                    // --- Is ignored? (checked FIRST so done+ignored tasks still increment the counter) ---
+                    bool? isIgnoredResult = GetIsIgnored(t, task, group);
+
+                    if (isIgnoredResult == true)
+                    {
+                        // Count for display regardless of done state
+                        policyIgnoredCount++;
+                        continue;
+                    }
+
                     // --- IsDone ---
                     bool? isDoneResult = GetIsDone(t, task, group);
                     if (isDoneResult == null)
@@ -110,16 +121,6 @@ namespace Immrsiv.QuestSetup.Editor
 
                     // --- Has automatic fix? ---
                     bool hasAutoFix = HasAutoFix(t, task);
-
-                    // --- Is ignored? ---
-                    bool isIgnored = GetIsIgnored(t, task, group);
-
-                    if (isIgnored)
-                    {
-                        // Count for display; check if it's our policy-ignored stereo task
-                        policyIgnoredCount++;
-                        continue;
-                    }
 
                     if (!hasAutoFix)
                     {
@@ -196,10 +197,14 @@ namespace Immrsiv.QuestSetup.Editor
 
         // ---- Reflection helpers ----
 
+        /// <summary>Guard so the IsIgnored-API-not-found warning logs at most once per domain load.</summary>
+        private static bool _isIgnoredApiWarningLogged;
+
         /// <summary>
         /// For any task in the given group whose message matches StereoInstancingTaskMessage,
         /// call SetIgnored(group, true) if not already ignored. Idempotent.
         /// Logs the policy reason the first time the ignore is set.
+        /// If the IsIgnored API cannot be found (SDK changed), logs a one-time warning and skips.
         /// </summary>
         private static void ApplyPolicyIgnore(List<object> tasks, BuildTargetGroup group)
         {
@@ -214,8 +219,20 @@ namespace Immrsiv.QuestSetup.Editor
                     continue;
 
                 // Check current ignore state
-                bool isAlreadyIgnored = GetIsIgnored(t, task, group);
-                if (isAlreadyIgnored)
+                bool? isAlreadyIgnored = GetIsIgnored(t, task, group);
+                if (isAlreadyIgnored == null)
+                {
+                    // IsIgnored API not found — cannot determine state; skip SetIgnored
+                    if (!_isIgnoredApiWarningLogged)
+                    {
+                        _isIgnoredApiWarningLogged = true;
+                        Debug.LogWarning("[QuestSetup] IsIgnored API not found on OVRConfigurationTask (Meta SDK API may have changed). " +
+                                         "The Single Pass Instanced policy-ignore could not be applied; the SPI recommendation may reappear in Meta's Project Setup Tool.");
+                    }
+                    return;
+                }
+
+                if (isAlreadyIgnored == true)
                     return; // already ignored — idempotent, do not log again
 
                 // Apply ignore via SetIgnored(BuildTargetGroup, bool)
@@ -245,7 +262,9 @@ namespace Immrsiv.QuestSetup.Editor
             if (getValueMethod != null)
                 return getValueMethod.Invoke(levelObj, new object[] { group })?.ToString();
 
-            return levelObj.ToString();
+            // GetValue not found — cannot resolve level string; return null rather than a
+            // type-name string that would silently break Required/Recommended match keys.
+            return null;
         }
 
         private static bool? GetIsDone(Type t, object task, BuildTargetGroup group)
@@ -273,12 +292,16 @@ namespace Immrsiv.QuestSetup.Editor
             return false;
         }
 
-        private static bool GetIsIgnored(Type t, object task, BuildTargetGroup group)
+        /// <summary>
+        /// Returns true/false from IsIgnored(group), or null if the method cannot be found
+        /// (API changed — caller must not treat indeterminate as false).
+        /// </summary>
+        private static bool? GetIsIgnored(Type t, object task, BuildTargetGroup group)
         {
-            var isIgnored = t.GetMethod("IsIgnored",
+            var isIgnoredMethod = t.GetMethod("IsIgnored",
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (isIgnored == null) return false;
-            return (bool)(isIgnored.Invoke(task, new object[] { group }) ?? false);
+            if (isIgnoredMethod == null) return null;
+            return (bool)(isIgnoredMethod.Invoke(task, new object[] { group }) ?? false);
         }
 
         private static string GetMessage(Type t, object task, BuildTargetGroup group)
@@ -295,7 +318,9 @@ namespace Immrsiv.QuestSetup.Editor
             if (getValueMethod != null)
                 return getValueMethod.Invoke(messageObj, new object[] { group })?.ToString();
 
-            return messageObj.ToString();
+            // GetValue not found — cannot resolve message string; return null rather than a
+            // type-name string that would silently break the StereoInstancingTaskMessage match key.
+            return null;
         }
     }
 }
