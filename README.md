@@ -39,7 +39,7 @@ This repository is two things at once:
    across the build-target switch and sample-import reloads.
 ```
 
-The setup window audits your project against this template's reference configuration and shows exactly what differs. **Nothing changes without a click.**
+The setup window audits your project against this template's reference configuration and shows exactly what differs. **Nothing changes without a click** (one exception: evaluating the Meta checklist registers our documented render-mode policy ignore in Meta's settings).
 
 ---
 
@@ -119,7 +119,7 @@ The package deliberately does not set these project-specific values:
 - **Editor testing (Quest Link):** put the headset on with Link active, then press Play. If XR fails to initialize with VIVE Hub installed, that's what check #1 fixes.
 - **Blessing a new Meta SDK:** update the versions in `package.json`, re-test this template, run `Immrsiv → Quest Setup Dev → Sync Samples From This Project`, update `CHANGELOG.md`, tag a release.
 - **CI / automation:** every check is scriptable in batch mode — `SetupCLI.RunChecks` (exit 1 on failure) and `SetupCLI.FixAll`. Always pass `-buildTarget Android` on the Unity command line; the check fails loudly with that instruction if the batch target is wrong.
-- **CI / batch mode:** Meta's Project Setup fixes apply asynchronously — in batch mode run `SetupCLI.FixAll` twice (or `FixAll` then `RunChecks`) to let them land and verify.
+- **CI / batch mode:** Meta's Project Setup fixes now apply synchronously — run `SetupCLI.FixAll` then `SetupCLI.RunChecks` to verify.
 
 ## 📚 More documentation
 

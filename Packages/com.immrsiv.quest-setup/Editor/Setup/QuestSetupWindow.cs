@@ -50,8 +50,9 @@ namespace Immrsiv.QuestSetup.Editor
         {
             if (_checks == null) return;
             EditorGUILayout.HelpBox(
-                "Immrsiv Quest Setup - project requirements for Meta Quest. Nothing changes without a click.\n" +
-                "Sample imports reload scripts: keep clicking Fix All until every row is green (usually twice).",
+                "Immrsiv Quest Setup - project requirements for Meta Quest. Nothing changes without a click " +
+                "(one exception: evaluating the Meta checklist registers our documented render-mode policy ignore in Meta's settings).\n" +
+                "Click Fix All once - the window resumes itself across the build-target switch and sample-import reloads.",
                 MessageType.Info);
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
@@ -135,11 +136,11 @@ namespace Immrsiv.QuestSetup.Editor
     /// <summary>Per-project EditorPrefs keys for the setup window.</summary>
     static class SetupKeys
     {
-        static string ProjectKey =>
-            Application.dataPath.Replace('/', '_').Replace('\\', '_').Replace(':', '_');
+        // Delegates to OptionalRulePrefs.ProjectKey — single implementation of the
+        // Application.dataPath → safe key-suffix transform used across the package.
 
         /// <summary>Set once the window has auto-opened for this project.</summary>
-        public static string ShownKey => "Immrsiv.QuestSetup.SetupShown." + ProjectKey;
+        public static string ShownKey => "Immrsiv.QuestSetup.SetupShown." + OptionalRulePrefs.ProjectKey;
     }
 
     /// <summary>Opens the setup window once per project after the package lands.</summary>

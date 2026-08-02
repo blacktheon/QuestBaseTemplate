@@ -60,7 +60,9 @@ namespace Immrsiv.QuestSetup.Editor
             if (failingAfter == 0) Finish("Fix All complete: all required checks pass.");
             else if (failingAfter >= failingBefore)
                 Finish($"Fix All stopped: {failingAfter} check(s) still failing and no progress was made - see rows above.");
-            // else: progress made; stay Pending for the post-reload continuation.
+            else if (!EditorApplication.isCompiling && !EditorApplication.isUpdating)
+                EditorApplication.delayCall += Continue;
+            // (if compiling/updating, the [InitializeOnLoad] continuation takes over after the reload)
         }
 
         static int CountFailing(List<SetupCheck> checks)

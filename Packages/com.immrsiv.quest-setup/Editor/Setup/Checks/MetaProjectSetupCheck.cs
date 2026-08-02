@@ -16,13 +16,17 @@ namespace Immrsiv.QuestSetup.Editor
     /// applied programmatically so Meta's tab shows 0 outstanding (Multi Pass is required
     /// on Standalone for correct two-eye rendering over Quest Link — see README).
     /// Manual-only tasks (no FixAction/AsyncFixAction) are counted separately and never
-    /// fail the check. Fix calls the public OVRProjectSetup.FixAllAsync per platform,
-    /// which already skips ignored and done tasks via OVRConfigurationTaskFixer.OpenTasksFilter.
+    /// fail the check. Fix calls the internal OVRProjectSetup.FixTasks with blocking:true
+    /// via reflection, which processes all fixes synchronously before returning — safe in
+    /// both interactive and batch (CI) contexts.
     ///
     /// SDK notes (com.meta.xr.sdk.core@c0efcbf2ba70, Oculus.VR.Editor assembly):
     ///   OVRProjectSetup is in the GLOBAL namespace (no Meta.XR.Editor namespace).
     ///   GetTasks(BuildTargetGroup) - line 310, internal static.
-    ///   FixAllAsync(BuildTargetGroup) - line 558, public static, returns Task.
+    ///   FixTasks(BuildTargetGroup, Func filter, LogMessages, bool blocking, Action onCompleted)
+    ///     - line 563, internal static; blocking:true forces synchronous execution via
+    ///       OVRConfigurationTaskProcessorQueue (lines 83-94: blocking flag calls Update()
+    ///       immediately rather than waiting for EditorApplication.update).
     ///   OVRConfigurationTask.Level - property returning OptionalLambdaType, call GetValue(group) on it.
     ///   OVRConfigurationTask.IsDone - property getter returns the GetDoneState method group as a
     ///     Func&lt;BuildTargetGroup,bool&gt; delegate (shares the task's internal done-cache); the
@@ -32,7 +36,7 @@ namespace Immrsiv.QuestSetup.Editor
     ///   OVRConfigurationTask.SetIgnored(BuildTargetGroup, bool) - public instance method (accessible via reflection).
     ///   OVRConfigurationTask.FixAction - public property, null means no automatic sync fix.
     ///   OVRConfigurationTask.AsyncFixAction - public property, null means no automatic async fix.
-    ///   OVRConfigurationTaskFixer.OpenTasksFilter skips IsIgnored and done tasks — FixAllAsync is safe to call as-is.
+    ///   OVRConfigurationTaskFixer.OpenTasksFilter skips IsIgnored and done tasks — FixTasks is safe to call as-is.
     ///   Stereo-instancing task match key (OVRProjectSetupRenderingTasks.cs line 254):
     ///     message = "Use Stereo Rendering Instancing", no platform filter (applies to both groups).
     /// </summary>
@@ -183,16 +187,46 @@ namespace Immrsiv.QuestSetup.Editor
 
         public override void Fix()
         {
-            var fixAll = SetupType?.GetMethod("FixAllAsync",
-                BindingFlags.Static | BindingFlags.Public,
-                null, new[] { typeof(BuildTargetGroup) }, null);
-            if (fixAll == null)
+            // Use the internal blocking FixTasks (line 563, Oculus.VR.Editor assembly) rather than
+            // the public FixAllAsync. FixAllAsync enqueues a non-blocking fixer that only runs on
+            // EditorApplication.update — in batch mode EditorApplication.Exit fires before any pump,
+            // so fixes are silently dropped. FixTasks with blocking:true calls
+            // OVRConfigurationTaskProcessorQueue.Update() immediately (lines 83-94) and completes
+            // before returning, making it safe in both interactive and batch contexts.
+            //
+            // Signature (line 563):
+            //   internal static void FixTasks(
+            //       BuildTargetGroup buildTargetGroup,
+            //       Func<IEnumerable<OVRConfigurationTask>, List<OVRConfigurationTask>> filter = null,
+            //       LogMessages logMessages = LogMessages.Disabled,   // int 0
+            //       bool blocking = true,
+            //       Action<OVRConfigurationTaskProcessor> onCompleted = null)
+            var setupType = SetupType;
+            if (setupType == null)
                 throw new InvalidOperationException(
-                    "OVRProjectSetup.FixAllAsync not found - run Meta > Tools > Project Setup Tool manually.");
+                    "OVRProjectSetup type not found - fix manually via Meta > Tools > Project Setup Tool.");
+
+            var fixTasks = setupType.GetMethod("FixTasks",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            if (fixTasks == null)
+                throw new InvalidOperationException(
+                    "OVRProjectSetup.FixTasks not found - fix manually via Meta > Tools > Project Setup Tool.");
+
+            // LogMessages enum lives on OVRProjectSetup (internal enum, value Disabled=0).
+            var logMessagesType = setupType.GetNestedType("LogMessages",
+                BindingFlags.NonPublic | BindingFlags.Public)
+                ?? Type.GetType("OVRProjectSetup+LogMessages, Oculus.VR.Editor");
+            // Fall back to raw int 0 (Disabled) if the nested-type lookup fails.
+            object logDisabled = logMessagesType != null
+                ? Enum.ToObject(logMessagesType, 0)
+                : (object)0;
+
             foreach (var group in Groups)
-                fixAll.Invoke(null, new object[] { group });
-            // Async: results land over the next frames; the window re-evaluates on focus.
-            // FixAllAsync already skips ignored and done tasks (OVRConfigurationTaskFixer.OpenTasksFilter).
+            {
+                // Pass: group, filter=null, logMessages=Disabled, blocking=true, onCompleted=null
+                fixTasks.Invoke(null, new object[] { group, null, logDisabled, true, null });
+            }
+            // FixTasks already skips ignored and done tasks (OVRConfigurationTaskFixer.OpenTasksFilter).
         }
 
         // ---- Reflection helpers ----

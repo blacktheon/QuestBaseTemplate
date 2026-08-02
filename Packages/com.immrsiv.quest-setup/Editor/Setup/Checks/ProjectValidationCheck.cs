@@ -295,11 +295,20 @@ namespace Immrsiv.QuestSetup.Editor
     /// <summary>
     /// EditorPrefs keys for the optional input-system migration toggles in the Quest Setup window.
     /// Both default to false (off) — applying these defines can break existing input code.
+    /// Keys are per-project (suffixed with ProjectKey) so toggling one project does not bleed
+    /// into other projects on the same machine.
     /// </summary>
     public static class OptionalRulePrefs
     {
-        public const string PoseControlKey = "Immrsiv.QuestSetup.Optional.PoseControl";
-        public const string StickControlKey = "Immrsiv.QuestSetup.Optional.StickControl";
+        /// <summary>
+        /// Stable per-project suffix derived from Application.dataPath.
+        /// Shared with SetupKeys so there is one implementation.
+        /// </summary>
+        internal static string ProjectKey =>
+            Application.dataPath.Replace('/', '_').Replace('\\', '_').Replace(':', '_');
+
+        public static string PoseControlKey => "Immrsiv.QuestSetup.Optional.PoseControl." + ProjectKey;
+        public static string StickControlKey => "Immrsiv.QuestSetup.Optional.StickControl." + ProjectKey;
 
         public static bool PoseControlEnabled
         {
