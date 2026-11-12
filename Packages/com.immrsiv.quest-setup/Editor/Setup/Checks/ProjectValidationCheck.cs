@@ -103,6 +103,7 @@ namespace Immrsiv.QuestSetup.Editor
                     continue;
                 }
 
+                using var targetScope = new SelectedBuildTargetGroupScope(group);
                 bool isStandalone = group == BuildTargetGroup.Standalone;
 
                 int fixable = 0;
@@ -219,6 +220,7 @@ namespace Immrsiv.QuestSetup.Editor
                 if (!platformRules.TryGetValue(group, out var rules))
                     continue;
 
+                using var targetScope = new SelectedBuildTargetGroupScope(group);
                 bool isStandalone = group == BuildTargetGroup.Standalone;
 
                 foreach (var rule in rules)
@@ -256,6 +258,23 @@ namespace Immrsiv.QuestSetup.Editor
 
             AssetDatabase.SaveAssets();
             Debug.Log($"[QuestSetup] ProjectValidation Fix complete: {fixedCount} rules fixed.");
+        }
+
+        // Some SDK rules (including OpenXR 1.17's Meta Quest multiview rule) read the
+        // editor's selected group instead of the group they were registered for.
+        // Scope every callback, including IsRuleEnabled and FixIt, to its own platform.
+        // This changes only the selection, never the active target or imported assets.
+        readonly struct SelectedBuildTargetGroupScope : IDisposable
+        {
+            readonly BuildTargetGroup previous;
+
+            public SelectedBuildTargetGroupScope(BuildTargetGroup group)
+            {
+                previous = EditorUserBuildSettings.selectedBuildTargetGroup;
+                EditorUserBuildSettings.selectedBuildTargetGroup = group;
+            }
+
+            public void Dispose() => EditorUserBuildSettings.selectedBuildTargetGroup = previous;
         }
 
         // ---- Exclusion match helpers ----

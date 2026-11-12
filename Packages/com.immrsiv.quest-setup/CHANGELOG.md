@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2] - 2026-11-12
+
+### Fixed
+- Unity XR Project Validation now runs each platform's rule callbacks with that platform selected, then restores the previous selection even if a rule throws. This prevents the OpenXR 1.17 Meta Quest multiview check from reading Standalone settings and throwing a `NullReferenceException` after cloning a project or switching platforms. Evaluation and automatic fixes both use the correct platform without switching the active build target.
+- Added Editor regression tests for platform-specific checks and fixes, selection restoration on failures, and the actual OpenXR Meta Quest multiview rule.
+
 ## [1.1.1] - 2026-08-02
 
 ### Fixed

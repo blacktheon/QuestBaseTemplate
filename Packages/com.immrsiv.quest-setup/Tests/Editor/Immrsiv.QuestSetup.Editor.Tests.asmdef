@@ -1,0 +1,14 @@
+{
+    "name": "Immrsiv.QuestSetup.Editor.Tests",
+    "rootNamespace": "Immrsiv.QuestSetup.Editor.Tests",
+    "references": [
+        "Immrsiv.QuestSetup.Editor",
+        "Unity.XR.CoreUtils.Editor",
+        "Unity.XR.OpenXR",
+        "Unity.XR.OpenXR.Editor",
+        "Unity.XR.OpenXR.Features.MetaQuestSupport"
+    ],
+    "includePlatforms": ["Editor"],
+    "optionalUnityReferences": ["TestAssemblies"],
+    "autoReferenced": false
+}
