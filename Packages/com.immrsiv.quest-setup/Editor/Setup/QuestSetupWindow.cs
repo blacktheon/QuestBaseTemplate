@@ -12,6 +12,7 @@ namespace Immrsiv.QuestSetup.Editor
         readonly Dictionary<SetupCheck, string> _fixErrors =
             new Dictionary<SetupCheck, string>();
         Vector2 _scroll;
+        bool _refreshPending;
 
         [MenuItem("Immrsiv/Quest Setup")]
         public static void Open() => GetWindow<QuestSetupWindow>("Quest Setup");
@@ -19,14 +20,42 @@ namespace Immrsiv.QuestSetup.Editor
         void OnEnable()
         {
             _checks = SetupCheckRegistry.CreateAll();
-            RefreshAll();
+            RequestRefresh();
         }
 
         void OnFocus()
         {
             // Checks re-evaluate only here and after fixes, not on every repaint -
             // some of them touch the asset database.
-            if (_checks != null) RefreshAll();
+            if (_checks != null) RequestRefresh();
+        }
+
+        void OnDisable()
+        {
+            EditorApplication.delayCall -= RefreshWhenReady;
+            _refreshPending = false;
+        }
+
+        void RequestRefresh()
+        {
+            // OnEnable can run while Unity is restoring assets after a domain reload.
+            // XR SDK settings and validation registrations are not ready at that point.
+            _refreshPending = true;
+            EditorApplication.delayCall -= RefreshWhenReady;
+            EditorApplication.delayCall += RefreshWhenReady;
+        }
+
+        void RefreshWhenReady()
+        {
+            if (this == null || !_refreshPending) return;
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                RequestRefresh();
+                return;
+            }
+
+            _refreshPending = false;
+            RefreshAll();
             Repaint();
         }
 
@@ -54,6 +83,12 @@ namespace Immrsiv.QuestSetup.Editor
                 "(one exception: evaluating the Meta checklist registers our documented render-mode policy ignore in Meta's settings).\n" +
                 "Click Fix All once - the window resumes itself across the build-target switch and sample-import reloads.",
                 MessageType.Info);
+
+            if (_refreshPending)
+            {
+                EditorGUILayout.HelpBox("Waiting for Unity to finish loading project settings...", MessageType.Info);
+                return;
+            }
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             int failing = 0;

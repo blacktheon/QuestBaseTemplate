@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3] - 2026-11-12
+
+### Fixed
+- Defer window validation after opening, focus, and domain reload until Unity finishes compilation and asset refresh. This prevents temporary null-reference failures while XR SDK settings and rule registrations are still loading. Pending validation shows a neutral waiting message and cannot invoke fixes; closing the window cancels its pending refresh.
+- Added Editor regressions for deferred/coalesced validation and cancellation when the window closes.
+
 ## [1.1.2] - 2026-11-12
 
 ### Fixed
