@@ -30,7 +30,7 @@ This repository is two things at once:
 ```text
 1. Package Manager → [+] → "Install package from git URL…"
 
-   https://github.com/blacktheon/QuestBaseTemplate.git?path=Packages/com.immrsiv.quest-setup
+   https://github.com/blacktheon/QuestBaseTemplate.git?path=/Packages/com.immrsiv.quest-setup
 
 2. The Quest Setup window opens automatically
    (or open it any time via  Immrsiv → Quest Setup)
@@ -129,4 +129,4 @@ The package deliberately does not set these project-specific values:
 
 ---
 
-<p align="center"><sub>Maintained by <b>Eugene</b> · Immrsiv · internal use</sub></p>
+<p align="center"><sub>Maintained by <b>blacktheon</b> · Immrsiv · internal use</sub></p>

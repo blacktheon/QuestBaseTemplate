@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.4] - 2026-11-24
+
+- Unity Package Manager now lists Immrsiv Quest Setup under `blacktheon`.
+
 ## [1.1.3] - 2026-11-12
 
 ### Fixed
